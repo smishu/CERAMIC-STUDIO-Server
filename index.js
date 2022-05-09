@@ -25,11 +25,59 @@ async function run() {
         });
         app.get('/product', async (req, res) => {
             const id = req.query.id
-            console.log(id);
+
             const query = { _id: ObjectId(id) };
             const service = await productCollection.findOne(query);
             res.send(service);
         });
+        app.put('/add-product/:id', async (req, res) => {
+
+            const id = req.params.id
+
+
+            const query = { _id: ObjectId(id) }
+            let result = await productCollection.findOne(query);
+
+            const options = { upsert: true };
+            //---------------------------------------------------//
+            const add = parseInt(req.query.add)
+            const deleted = parseInt(req.query.deleted)
+            const addQuantity = parseInt(result?.quantity) + add;
+            const deleteQuantity = parseInt(result?.quantity) - deleted;
+
+            try {
+
+                if (add && !deleted) {
+
+                    if (result.quantity) {
+
+                        updateQuantity = await productCollection.updateOne(query, { $set: { quantity: addQuantity } }, options)
+                    } else {
+
+                        updateQuantity = await productCollection.updateOne(query, { $set: { quantity: add } }, options)
+                    }
+
+                    res.send(result)
+
+                } else {
+
+                    if (result.quantity) {
+                        updateQuantity = await productCollection.updateOne(query, { $set: { quantity: deleteQuantity } }, options)
+
+                    }
+
+                    else {
+                        res.send({ error: 'Error updating quantity' })
+                    }
+                    res.send(result)
+                }
+            }
+            catch (error) {
+                console.log(error)
+
+            }
+
+        })
 
     }
     finally { }
